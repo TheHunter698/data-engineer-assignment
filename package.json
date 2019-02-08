@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "async": "^2.6.1",
+    "mongoose": "^5.4.10",
     "nats": "^1.0.1",
     "underscore": "^1.9.1"
   },
