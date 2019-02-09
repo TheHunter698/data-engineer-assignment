@@ -26,7 +26,7 @@ mongoose.connect('http://localhost:27017/busData')
 // After a connection is made you can start broadcasting messages (take a look at nats.publish())
 const nats = NATS.connect({ json: true })
 
-//Subscriptions
+//Subscriptions to all topics needed
 nats.subscribe(`vehicle:test-bus-1:current`, (res) =>{
 	previousElement.current = res
 })
@@ -62,7 +62,6 @@ var previousElement = {
 
 	}
 }
-var arr = []
 
 // This function will start reading out json data from file and publish it on nats
 const readOutLoud = (vehicleName, cb) => {
@@ -88,7 +87,7 @@ var whatTheHenkIsHeDoing = (object) => {
 		toReturn = 'Henk its on its way to somewhere.'
 	}
 
-	return toReturn + 'Henk is in km ' + (object.odometer.value/1000).toString() //Seems like recursion?
+	return toReturn + 'Henk is in km ' + (object.odometer.value/1000).toString() //Returning where is hank
 }
 
 var magicFunction = (cb) => {
@@ -96,11 +95,10 @@ var magicFunction = (cb) => {
 		if(previousElement.additionalData !== {}){
 			var delta_energy = previousElement.additionalData.power * (previousElement.additionalData.time - previousElement.current.time) //This is in watts
 			delta_energy = delta_energy/1000
-			nats.publish(`vehicle:test-bus-1:delta-energy`, delta_energy)
+			console.log(delta_energy, 'Energy of Henks bus')
+			nats.publish(`vehicle:test-bus-1:delta-energy`, delta_energy) //Publish the resultant energy
 			
-			console.log('DELTA ENERGY IN kWTS', delta_energy)
 		}
-
 		power = parseFloat(previousElement.current.value) * parseFloat(previousElement.voltage.value)
 		
 		nats.publish(`vehicle:test-bus-1:power`, power) //Publishing power of the element, which the next one will recieve
