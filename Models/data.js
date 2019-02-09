@@ -4,6 +4,7 @@ const Schema = mongoose.Schema
 dataSchema = new Schema({
     delta_energy: Number,
     power = Number,
+    voltage = Number,
     time = Number,
 })
 

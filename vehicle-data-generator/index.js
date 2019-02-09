@@ -6,6 +6,8 @@ There are 2 question points for you to tell us the answer on your presentation
 If you're up for it
 
 */
+//PLEASE REMEMBER TO INSTALL MONGODB AND MONGOOSE WHEN TESTING THIS CODE. 
+
 const _     = require("underscore")
 const async = require("async")
 
@@ -28,25 +30,25 @@ const nats = NATS.connect({ json: true })
 
 //Subscriptions to all topics needed
 nats.subscribe(`vehicle:test-bus-1:current`, (res) =>{
-	previousElement.current = res
+	dataRecieved.current = res
 })
 nats.subscribe(`vehicle:test-bus-1:odometer`, (res) =>{
-	previousElement.odometer = res
+	dataRecieved.odometer = res
 })
 nats.subscribe(`vehicle:test-bus-1:voltage`, (res) =>{
-	previousElement.voltage = res
+	dataRecieved.voltage = res
 })
 nats.subscribe(`vehicle:test-bus-1:speed`, (res) =>{
-	previousElement.speed = res
+	dataRecieved.speed = res
 })
 nats.subscribe(`vehicle:test-bus-1:power`, (res) => {
-	previousElement.additionalData.power = res
+	dataRecieved.additionalData.power = res
 })
 nats.subscribe(`vehicle:test-bus-1:previoustime`, (res) => {
-	previousElement.additionalData.time = res
+	dataRecieved.additionalData.time = res
 })
 nats.subscribe(`vehicle:test-bus-1:previoustime`, (res) => {
-	previousElement.additionalData.delta_energy = res
+	dataRecieved.additionalData.delta_energy = res
 })
 
 //Data in car
@@ -57,7 +59,7 @@ const mockData = {
 	speed:    require("../meta/speed.json")
 }
 //Data in computer
-var previousElement = {
+var dataRecieved = {
 	additionalData: {
 
 	}
@@ -92,19 +94,29 @@ var whatTheHenkIsHeDoing = (object) => {
 
 var magicFunction = (cb) => {
 	setTimeout(() => {
-		if(previousElement.additionalData !== {}){
-			var delta_energy = previousElement.additionalData.power * (previousElement.additionalData.time - previousElement.current.time) //This is in watts
+		currentPower = parseFloat(dataRecieved.current.value) * parseFloat(dataRecieved.voltage.value)
+		if(dataRecieved.additionalData !== {}){
+			var delta_energy = dataRecieved.additionalData.power * (dataRecieved.additionalData.time - dataRecieved.current.time) //This is in watts
 			delta_energy = delta_energy/1000
 			console.log(delta_energy, 'Energy of Henks bus')
 			nats.publish(`vehicle:test-bus-1:delta-energy`, delta_energy) //Publish the resultant energy
-			
+
+			var data = new dataModel({
+				time: dataRecieved.current.time,
+				power: power,
+				energy: delta_energy,
+				voltage: dataRecieved.voltage.value
+			})
+
+			data.save() //Saving data at that time
+			.then(() => console.log('Stored successfully'))
+			.catch((err) => console.log(err))
 		}
-		power = parseFloat(previousElement.current.value) * parseFloat(previousElement.voltage.value)
 		
-		nats.publish(`vehicle:test-bus-1:power`, power) //Publishing power of the element, which the next one will recieve
-		nats.publish(`vehicle:test-bus-1:previoustime`, previousElement.current.time) //Passing the time of that power to next element
+		nats.publish(`vehicle:test-bus-1:power`, currentPower) //Publishing power of the element, which the next one will recieve
+		nats.publish(`vehicle:test-bus-1:previoustime`, dataRecieved.current.time) //Passing the time of that power to next element
 		
-		console.log(whatTheHenkIsHeDoing(previousElement))
+		console.log(whatTheHenkIsHeDoing(dataRecieved))
 		cb()
 	}, 1600)
 }
